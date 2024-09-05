@@ -1,37 +1,101 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { SplashScreen, Stack, useNavigationContainerRef } from "expo-router";
+import { setStatusBarBackgroundColor, StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import changeNavigationBarColor from "react-native-navigation-bar-color";
+import { useCameraPermission } from "react-native-vision-camera";
+import * as Sentry from "@sentry/react-native";
+import { isRunningInExpoGo } from "expo";
+import ToastManager from "toastify-react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+const routingInstrumentation = new Sentry.ReactNavigationInstrumentation();
+Sentry.init({
+  dsn: "https://e38e2c16df6a3fbdd66dee54dd92ef7d@o4507530408689664.ingest.us.sentry.io/4507530414391296",
+  debug: true, // If `true`, Sentry will try to print out useful debugging information if something goes wrong with sending the event. Set it to `false` in production
+  tracesSampleRate: 1.0,
+  integrations: [
+    new Sentry.ReactNativeTracing({
+      routingInstrumentation,
+      enableNativeFramesTracking: !isRunningInExpoGo(),
+      // ...
+    }),
+  ],
+});
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
-
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+export default Sentry.wrap(function Layout() {
+  const ref = useNavigationContainerRef();
+  useEffect(() => {
+    setStatusBarBackgroundColor("#161622", false);
+    changeNavigationBarColor("#161622", false);
+  }, []);
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    if (ref) {
+      routingInstrumentation.registerNavigationContainer(ref);
     }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
-
+  }, [ref]);
+  const { hasPermission, requestPermission } = useCameraPermission();
+  useEffect(() => {
+    if (!hasPermission) {
+      requestPermission();
+    }
+  }, [hasPermission]);
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
+    <GestureHandlerRootView>
+      <StatusBar backgroundColor="#161622" />
+      <ToastManager
+        textStyle={{ fontSize: 15, width: 170 }}
+        positionValue={120}
+        animationIn={"fadeIn"}
+        animationOut={"fadeOut"}
+      />
+      <Stack
+        screenOptions={{
+          contentStyle: { backgroundColor: "#161622" },
+        }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
+        <Stack.Screen
+          name="camera"
+          options={{
+            headerTitle: "",
+            headerTintColor: "white",
+            headerStyle: { backgroundColor: "#161622" },
+          }}
+        />
+        <Stack.Screen
+          name="image"
+          options={{
+            headerTitle: "",
+            headerTintColor: "white",
+            headerStyle: { backgroundColor: "#161622" },
+          }}
+        />
+        <Stack.Screen
+          name="edit"
+          options={{
+            headerTitle: "",
+            headerTintColor: "white",
+            headerStyle: { backgroundColor: "#161622" },
+          }}
+        />
+        <Stack.Screen
+          name="createItem"
+          options={{
+            headerTitle: "",
+            headerTintColor: "white",
+            headerStyle: { backgroundColor: "#161622" },
+          }}
+        />
+        <Stack.Screen
+          name="reorder"
+          options={{
+            headerTitle: "",
+            headerTintColor: "white",
+            headerStyle: { backgroundColor: "#161622" },
+          }}
+        />
       </Stack>
-    </ThemeProvider>
+    </GestureHandlerRootView>
   );
-}
+});
